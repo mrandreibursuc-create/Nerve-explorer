@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motor Block Territory Explorer — brachial plexus</title>
+<style>
+  :root{
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,Menlo,Consolas,monospace;
+    --ink:#1c2530; --ink-soft:#67717f; --line:#e3e8ee; --bg:#f6f8fa;
+    --complete:#c0392b; --partial:#d98a1f;
+    --mcn:#b8332a; --ax:#7d5ba6; --med:#2566a8; --rad:#2c8a5f; --uln:#c2761a; --prox:#475569;
+    --cmpA:#2563eb; --cmpB:#9333ea; --cmpBoth:#0f766e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:14px;line-height:1.45}
+  header{padding:14px 18px 10px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:5}
+  .ttl{font-weight:750;font-size:17px;letter-spacing:-.01em}
+  .ttl span{font-weight:450;color:var(--ink-soft);font-family:var(--mono);font-size:11.5px;margin-left:8px}
+  .sub{color:var(--ink-soft);font-size:12px;margin-top:3px;max-width:900px}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
+  .search{position:relative}
+  .search input{font:inherit;font-size:13px;padding:7px 28px 7px 11px;border:1px solid var(--line);border-radius:9px;width:270px;background:#fff;outline:none}
+  .search input:focus{border-color:#9bb6d6;box-shadow:0 0 0 3px #e7f0fb}
+  .search .x{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--ink-soft);font-size:16px;cursor:pointer;display:none}
+  .ghost{font:inherit;font-size:12.5px;padding:7px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;color:var(--ink)}
+  .ghost:hover{border-color:#b9c4d1}
+  .ghost.active{background:#1c2530;color:#fff;border-color:#1c2530}
+  .lang{font-weight:700;border-color:#2566a8;color:#2566a8;background:#eef5fc}
+  .lang:hover{background:#e1ecf9;border-color:#1d5390}
+  .legend{display:flex;gap:13px;align-items:center;flex-wrap:wrap;margin-left:auto;font-size:11.5px;color:var(--ink-soft)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+  .legend i.dash{border:1.5px dashed #5b8a8a;background:#f6f9fb}
+
+  main{display:grid;grid-template-columns:1fr 364px;gap:0;align-items:start}
+  @media (max-width:980px){ main{grid-template-columns:1fr} .panelwrap{position:static!important;border-left:0!important;border-top:1px solid var(--line)} }
+  .diagramwrap{overflow:auto;max-height:calc(100vh - 104px);padding:12px 6px 60px 12px;
+    background:#fbfcfd;
+    background-image:radial-gradient(#ecedf1 1px, transparent 1px);
+    background-size:22px 22px}
+  svg.tree{display:block;font-family:var(--sans)}
+
+  .panelwrap{position:sticky;top:104px;max-height:calc(100vh - 104px);overflow:auto;border-left:1px solid var(--line);background:#fff;padding:16px 16px 40px}
+  .ph{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft)}
+  .blockpoint{margin:6px 0 2px;font-weight:750;font-size:18px;line-height:1.2}
+  .blockmeta{color:var(--ink-soft);font-size:12px;margin-bottom:12px}
+  .countrow{display:flex;gap:8px;margin:10px 0 6px;flex-wrap:wrap}
+  .pill{font-size:11.5px;font-weight:650;padding:3px 9px;border-radius:20px}
+  .pill.c{background:#fbe9e7;color:var(--complete)}
+  .pill.p{background:#fcf1df;color:var(--partial)}
+  .pill.a{background:#e6effd;color:var(--cmpA)}
+  .pill.b{background:#f3e8fd;color:var(--cmpB)}
+  .pill.both{background:#ddf5f1;color:var(--cmpBoth)}
+  .grp{margin:12px 0 0}
+  .grp h4{margin:0 0 5px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+  .grp h4 .nv{width:9px;height:9px;border-radius:50%;display:inline-block}
+  ul.musc{list-style:none;margin:0;padding:0}
+  ul.musc li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #eef1f5;font-size:13px}
+  ul.musc li .lv{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);white-space:nowrap}
+  ul.musc li.part{color:var(--partial)}
+  ul.sens li{font-size:12.5px;color:#3f6b6b}
+  ul.sens li .terr{color:var(--ink-soft);font-size:11px}
+  .caveat{margin-top:14px;font-size:11.5px;color:var(--ink-soft);background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:9px 11px;line-height:1.5}
+  .pathline{font-size:12.5px;line-height:1.8;margin:6px 0}
+  .pathline b{font-weight:700}
+  .chip{display:inline-block;font-family:var(--mono);font-size:11px;background:#eef2f7;border-radius:5px;padding:1px 6px;margin:1px 2px}
+  .empty{color:var(--ink-soft);font-size:13px;margin-top:30px;text-align:center;line-height:1.6}
+  .node{cursor:pointer}
+  .node rect{transition:fill .12s,stroke .12s,opacity .12s}
+  .node text{pointer-events:none}
+  .nlabel{font-size:11.5px;font-weight:650;dominant-baseline:middle}
+  .nlabel.sens{font-style:italic;font-weight:500}
+  .nlv{font-family:var(--mono);font-size:8.5px;fill:#8a95a3}
+  svg.dimmed .node:not(.on) rect{opacity:.26}
+  svg.dimmed .node:not(.on) text{opacity:.30}
+  svg.dimmed .edge{opacity:.12}
+  svg.dimmed .edge.eon{opacity:.95}
+  .node.block rect{stroke-width:3 !important}
+  svg.tree:not(.dimmed) .node.peek rect:first-of-type{fill:#fff4d9 !important;stroke-width:2.2}
+  svg.tree:not(.dimmed) .node.peek.peekhead rect:first-of-type{fill:#ffe9b0 !important}
+  .edge{fill:none;stroke:#a6b2bf;stroke-width:1.6}
+  .edge.sec{stroke:#bdc6d1;stroke-dasharray:4 4;stroke-width:1.3}
+  .edge.sens{stroke:#a1c0c0;stroke-dasharray:2 3;stroke-width:1.2}
+  .edge.eon{stroke:#c0392b;stroke-width:2.4}
+</style>
+</head>
+<body>
+<header>
+  <div class="ttl"><span id="ttlMain">Motor Block Territory Explorer</span> <span id="ttlSub">brachial plexus → muscle</span></div>
+  <div class="sub" id="subTxt"></div>
+  <div class="bar">
+    <div class="search"><input id="q" type="search" autocomplete="off"><button class="x" id="qx">×</button></div>
+    <button class="ghost" id="reset"></button>
+    <button class="ghost" id="sensBtn"></button>
+    <button class="ghost" id="cmpBtn"></button>
+    <button class="ghost lang" id="langBtn"></button>
+    <button class="ghost" id="printbtn"></button>
+    <div class="legend" id="legend"></div>
+  </div>
+</header>
+
+<main>
+  <div class="diagramwrap"><svg class="tree" id="tree" role="img" aria-label="Brachial plexus block diagram"></svg></div>
+  <aside class="panelwrap"><div id="panel"></div></aside>
+</main>
+
+<script>
+/* =====================================================================
+   STRINGS
+   ===================================================================== */
+const STR={
+ en:{title:"Motor Block Territory Explorer",tsub:"brachial plexus → muscle",
+   sub:"Click any point — root, trunk, cord, terminal nerve, named branch (AIN, PIN, deep ulnar…), or a single muscle's motor branch — to see what a complete block there denervates distally. Solid red = completely denervated; amber = partial (keeps another route). Hover to preview.",
+   search:"Find a muscle — e.g. biceps, FDI",reset:"Reset",print:"Print / PDF",sensory:"Sensory",compare:"Compare",
+   blockPoint:"Block point",targetMuscle:"Target muscle",complete:"complete",partial:"partial",
+   completelyDen:"Completely denervated",partiallyAff:"Partially affected (keeps another root pathway)",
+   keeps:"keeps",sensoryTerr:"Sensory territory blocked",
+   typeRoot:"Spinal root",typeTrunk:"Plexus trunk",typeCord:"Plexus cord",typeNerve:"Terminal nerve",typeBranch:"Named branch",typeSensory:"Cutaneous branch",
+   emptyMsg:"Click a nerve, branch, trunk, cord, or muscle in the diagram.<br>It shows every muscle a complete block at that point would weaken.",
+   noDistal:"No motor branches distal to this point.",
+   proximalCaveat:"<b>Proximal block.</b> At root/trunk/cord level, \u201cpartial\u201d means the muscle still receives a root pathway that bypasses the block \u2014 a reduced, not abolished, contraction. The median is shown receiving from <b>both</b> lateral and medial cords, so a single-cord block leaves it partial.",
+   toBlockOnly:"To weaken only this muscle, block its motor branch",
+   onlyBranchNote:"Blocking the terminal twig to <b>{m}</b> denervates only this muscle. Blocking any node upstream on the chain also takes out everything else distal to that point.",
+   myotome:"myotome",territory:"Territory",
+   cmpPrompt:"Compare mode \u2014 click a first block point (A), then a second (B).",
+   cmpPickB:"Now click the second block point (B).",
+   onlyA:"Only A",onlyB:"Only B",both:"Both",
+   sensoryNodeMsg:"Cutaneous (sensory) branch \u2014 no motor territory."},
+ fr:{title:"Explorateur des territoires de bloc moteur",tsub:"plexus brachial → muscle",
+   sub:"Cliquez n'importe o\u00f9 \u2014 racine, tronc, faisceau, nerf terminal, branche nomm\u00e9e (NIA, NIP, br. profonde ulnaire\u2026), ou la branche motrice d'un seul muscle \u2014 pour voir ce qu'un bloc complet \u00e0 ce point d\u00e9nerve en distal. Rouge plein = compl\u00e8tement d\u00e9nerv\u00e9 ; ambre = partiel (garde une autre voie). Survolez pour pr\u00e9visualiser.",
+   search:"Trouver un muscle \u2014 p.\u00a0ex. biceps, 1IOD",reset:"R\u00e9initialiser",print:"Imprimer / PDF",sensory:"Sensitif",compare:"Comparer",
+   blockPoint:"Point de bloc",targetMuscle:"Muscle cible",complete:"complet",partial:"partiel",
+   completelyDen:"Compl\u00e8tement d\u00e9nerv\u00e9s",partiallyAff:"Partiellement atteints (garde une voie radiculaire)",
+   keeps:"garde",sensoryTerr:"Territoire sensitif bloqu\u00e9",
+   typeRoot:"Racine spinale",typeTrunk:"Tronc du plexus",typeCord:"Faisceau du plexus",typeNerve:"Nerf terminal",typeBranch:"Branche nomm\u00e9e",typeSensory:"Branche cutan\u00e9e",
+   emptyMsg:"Cliquez un nerf, une branche, un tronc, un faisceau ou un muscle.<br>L'outil montre chaque muscle qu'un bloc complet \u00e0 ce point affaiblirait.",
+   noDistal:"Aucune branche motrice en distal de ce point.",
+   proximalCaveat:"<b>Bloc proximal.</b> Au niveau racine/tronc/faisceau, \u00ab\u00a0partiel\u00a0\u00bb signifie que le muscle re\u00e7oit encore une voie radiculaire qui contourne le bloc \u2014 contraction diminu\u00e9e, non abolie. Le nerf m\u00e9dian re\u00e7oit des <b>deux</b> faisceaux lat\u00e9ral et m\u00e9dial ; un bloc d'un seul faisceau le laisse partiel.",
+   toBlockOnly:"Pour n'affaiblir que ce muscle, bloquez sa branche motrice",
+   onlyBranchNote:"Bloquer le rameau terminal vers <b>{m}</b> ne d\u00e9nerve que ce muscle. Bloquer un n\u0153ud en amont de la cha\u00eene atteint aussi tout ce qui est distal \u00e0 ce point.",
+   myotome:"myotome",territory:"Territoire",
+   cmpPrompt:"Mode comparaison \u2014 cliquez un premier point de bloc (A), puis un second (B).",
+   cmpPickB:"Cliquez maintenant le second point de bloc (B).",
+   onlyA:"Seul. A",onlyB:"Seul. B",both:"Les deux",
+   sensoryNodeMsg:"Branche cutan\u00e9e (sensitive) \u2014 pas de territoire moteur."}
+};
+let lang="en";
+const T=k=>STR[lang][k];
+const NVNAME={en:{mcn:"Musculocutaneous",ax:"Axillary",med:"Median",rad:"Radial",uln:"Ulnar",prox:"Proximal / girdle"},
+              fr:{mcn:"Musculo-cutan\u00e9",ax:"Axillaire",med:"M\u00e9dian",rad:"Radial",uln:"Ulnaire",prox:"Proximal / ceinture"}};
+const LEGTXT={en:{mcn:"m-cut",ax:"axillary",med:"median",rad:"radial",uln:"ulnar",prox:"proximal",sensory:"sensory"},
+              fr:{mcn:"m-cutan\u00e9",ax:"axillaire",med:"m\u00e9dian",rad:"radial",uln:"ulnaire",prox:"proximal",sensory:"sensitif"}};
+
+/* =====================================================================
+   NODES  (l = English, lf = French)
+   ===================================================================== */
+const C={mcn:"var(--mcn)",ax:"var(--ax)",med:"var(--med)",rad:"var(--rad)",uln:"var(--uln)",prox:"var(--prox)"};
+const NODES={
+  C5:{l:"C5",lf:"C5",t:"root"},C6:{l:"C6",lf:"C6",t:"root"},C7:{l:"C7",lf:"C7",t:"root"},C8:{l:"C8",lf:"C8",t:"root"},T1:{l:"T1",lf:"T1",t:"root"},
+  TS:{l:"Superior trunk",lf:"Tronc sup\u00e9rieur",t:"trunk"},TM:{l:"Middle trunk",lf:"Tronc moyen",t:"trunk"},TI:{l:"Inferior trunk",lf:"Tronc inf\u00e9rieur",t:"trunk"},
+  CL:{l:"Lateral cord",lf:"Faisceau lat\u00e9ral",t:"cord"},CP:{l:"Posterior cord",lf:"Faisceau post\u00e9rieur",t:"cord"},CM:{l:"Medial cord",lf:"Faisceau m\u00e9dial",t:"cord"},
+  dorsalScap:{l:"Dorsal scapular n.",lf:"N. dorsal de la scapula",t:"branch",c:"prox"},
+  longThor:{l:"Long thoracic n.",lf:"N. thoracique long",t:"branch",c:"prox"},
+  nSubcl:{l:"N. to subclavius",lf:"N. du subclavier",t:"branch",c:"prox"},
+  suprascap:{l:"Suprascapular n.",lf:"N. supra-scapulaire",t:"branch",c:"prox"},
+  latPect:{l:"Lateral pectoral n.",lf:"N. pectoral lat\u00e9ral",t:"branch",c:"prox"},
+  medPect:{l:"Medial pectoral n.",lf:"N. pectoral m\u00e9dial",t:"branch",c:"prox"},
+  upSubscap:{l:"Upper subscapular n.",lf:"N. subscapulaire sup.",t:"branch",c:"prox"},
+  lowSubscap:{l:"Lower subscapular n.",lf:"N. subscapulaire inf.",t:"branch",c:"prox"},
+  thoracodorsal:{l:"Thoracodorsal n.",lf:"N. thoraco-dorsal",t:"branch",c:"prox"},
+  mcn:{l:"Musculocutaneous n.",lf:"N. musculo-cutan\u00e9",t:"nerve",c:"mcn"},
+  ax:{l:"Axillary n.",lf:"N. axillaire",t:"nerve",c:"ax"},
+  rad:{l:"Radial n.",lf:"N. radial",t:"nerve",c:"rad"},
+  med:{l:"Median n.",lf:"N. m\u00e9dian",t:"nerve",c:"med"},
+  uln:{l:"Ulnar n.",lf:"N. ulnaire",t:"nerve",c:"uln"},
+  ain:{l:"AIN",lf:"NIA",t:"branch",c:"med"},
+  recThenar:{l:"Recurrent (thenar) br.",lf:"Br. r\u00e9currente (th\u00e9nar)",t:"branch",c:"med"},
+  deepRad:{l:"Deep radial br.",lf:"Br. profonde radiale",t:"branch",c:"rad"},
+  pin:{l:"PIN",lf:"NIP",t:"branch",c:"rad"},
+  deepUln:{l:"Deep ulnar motor br.",lf:"Br. profonde ulnaire (motrice)",t:"branch",c:"uln"},
+  // muscles
+  rhomboids:{l:"Rhomboids",lf:"Rhombo\u00efdes",t:"muscle",c:"prox",myo:["C5"]},
+  levScap:{l:"Levator scapulae",lf:"\u00c9l\u00e9vateur scapula",t:"muscle",c:"prox",myo:["C5"]},
+  serratus:{l:"Serratus anterior",lf:"Dentel\u00e9 ant\u00e9rieur",t:"muscle",c:"prox",myo:["C5","C6","C7"]},
+  subclavius:{l:"Subclavius",lf:"Subclavier",t:"muscle",c:"prox",myo:["C5","C6"]},
+  supraspin:{l:"Supraspinatus",lf:"Supra-\u00e9pineux",t:"muscle",c:"prox",myo:["C5","C6"]},
+  infraspin:{l:"Infraspinatus",lf:"Infra-\u00e9pineux",t:"muscle",c:"prox",myo:["C5","C6"]},
+  subscap:{l:"Subscapularis",lf:"Subscapulaire",t:"muscle",c:"prox",myo:["C5","C6"]},
+  teresMajor:{l:"Teres major",lf:"Grand rond",t:"muscle",c:"prox",myo:["C5","C6"]},
+  latissimus:{l:"Latissimus dorsi",lf:"Grand dorsal",t:"muscle",c:"prox",myo:["C6","C7","C8"]},
+  pecMajClav:{l:"Pec major (clavicular)",lf:"Grand pectoral (clav.)",t:"muscle",c:"prox",myo:["C5","C6","C7"]},
+  pecMajStern:{l:"Pec major (sternal)",lf:"Grand pectoral (stern.)",t:"muscle",c:"prox",myo:["C8","T1"]},
+  pecMinor:{l:"Pec minor",lf:"Petit pectoral",t:"muscle",c:"prox",myo:["C8","T1"]},
+  deltoid:{l:"Deltoid",lf:"Delto\u00efde",t:"muscle",c:"ax",myo:["C5","C6"]},
+  teresMinor:{l:"Teres minor",lf:"Petit rond",t:"muscle",c:"ax",myo:["C5","C6"]},
+  coraco:{l:"Coracobrachialis",lf:"Coraco-brachial",t:"muscle",c:"mcn",myo:["C5","C6","C7"]},
+  biceps:{l:"Biceps brachii",lf:"Biceps brachial",t:"muscle",c:"mcn",myo:["C5","C6"]},
+  brachialis:{l:"Brachialis",lf:"Brachial",t:"muscle",c:"mcn",myo:["C5","C6"]},
+  tricepsLong:{l:"Triceps (long head)",lf:"Triceps (chef long)",t:"muscle",c:"rad",myo:["C7","C8"]},
+  tricepsLat:{l:"Triceps (lateral head)",lf:"Triceps (chef lat\u00e9ral)",t:"muscle",c:"rad",myo:["C7","C8"]},
+  tricepsMed:{l:"Triceps (medial head)",lf:"Triceps (chef m\u00e9dial)",t:"muscle",c:"rad",myo:["C7","C8"]},
+  anconeus:{l:"Anconeus",lf:"Ancon\u00e9",t:"muscle",c:"rad",myo:["C7","C8"]},
+  brachiorad:{l:"Brachioradialis",lf:"Brachio-radial",t:"muscle",c:"rad",myo:["C5","C6"]},
+  ecrl:{l:"ECRL",lf:"LERC",t:"muscle",c:"rad",myo:["C6","C7"]},
+  ecrb:{l:"ECRB",lf:"CERC",t:"muscle",c:"rad",myo:["C6","C7"]},
+  supinator:{l:"Supinator",lf:"Supinateur",t:"muscle",c:"rad",myo:["C6","C7"]},
+  edc:{l:"EDC",lf:"ED",t:"muscle",c:"rad",myo:["C7","C8"]},
+  edm:{l:"EDM",lf:"EPD",t:"muscle",c:"rad",myo:["C7","C8"]},
+  ecu:{l:"ECU",lf:"EUC",t:"muscle",c:"rad",myo:["C7","C8"]},
+  apl:{l:"APL",lf:"LAP",t:"muscle",c:"rad",myo:["C7","C8"]},
+  epl:{l:"EPL",lf:"LEP",t:"muscle",c:"rad",myo:["C7","C8"]},
+  epb:{l:"EPB",lf:"CEP",t:"muscle",c:"rad",myo:["C7","C8"]},
+  eip:{l:"EIP",lf:"EI",t:"muscle",c:"rad",myo:["C7","C8"]},
+  pronTeres:{l:"Pronator teres",lf:"Rond pronateur",t:"muscle",c:"med",myo:["C6","C7"]},
+  fcr:{l:"FCR",lf:"FRC",t:"muscle",c:"med",myo:["C6","C7"]},
+  palmLong:{l:"Palmaris longus",lf:"Long palmaire",t:"muscle",c:"med",myo:["C7","C8"]},
+  fds:{l:"FDS",lf:"FSD",t:"muscle",c:"med",myo:["C7","C8","T1"]},
+  fpl:{l:"FPL",lf:"LFP",t:"muscle",c:"med",myo:["C7","C8"]},
+  fdp23:{l:"FDP (digits 2\u20133)",lf:"FPD (doigts 2\u20133)",t:"muscle",c:"med",myo:["C7","C8"]},
+  pronQuad:{l:"Pronator quadratus",lf:"Carr\u00e9 pronateur",t:"muscle",c:"med",myo:["C7","C8"]},
+  apb:{l:"Abductor pollicis brevis",lf:"Court abd. du pouce (CAP)",t:"muscle",c:"med",myo:["C8","T1"]},
+  oppPol:{l:"Opponens pollicis",lf:"Opposant du pouce",t:"muscle",c:"med",myo:["C8","T1"]},
+  fpbSup:{l:"FPB (superficial head)",lf:"CFP (chef superf.)",t:"muscle",c:"med",myo:["C8","T1"]},
+  lumb12:{l:"Lumbricals 1\u20132",lf:"Lombricaux 1\u20132",t:"muscle",c:"med",myo:["C8","T1"]},
+  fcu:{l:"FCU",lf:"FUC",t:"muscle",c:"uln",myo:["C8","T1"]},
+  fdp45:{l:"FDP (digits 4\u20135)",lf:"FPD (doigts 4\u20135)",t:"muscle",c:"uln",myo:["C8","T1"]},
+  adm:{l:"Abductor digiti minimi",lf:"Abd. du petit doigt",t:"muscle",c:"uln",myo:["C8","T1"]},
+  odm:{l:"Opponens digiti minimi",lf:"Opp. du petit doigt",t:"muscle",c:"uln",myo:["C8","T1"]},
+  fdm:{l:"Flexor digiti minimi",lf:"Court fl\u00e9ch. petit doigt",t:"muscle",c:"uln",myo:["C8","T1"]},
+  lumb34:{l:"Lumbricals 3\u20134",lf:"Lombricaux 3\u20134",t:"muscle",c:"uln",myo:["C8","T1"]},
+  dorInteross:{l:"Dorsal interossei (incl. FDI)",lf:"Interosseux dorsaux (1IOD)",t:"muscle",c:"uln",myo:["C8","T1"]},
+  palInteross:{l:"Palmar interossei",lf:"Interosseux palmaires",t:"muscle",c:"uln",myo:["C8","T1"]},
+  addPol:{l:"Adductor pollicis",lf:"Adducteur du pouce",t:"muscle",c:"uln",myo:["C8","T1"]},
+  fpbDeep:{l:"FPB (deep head)",lf:"CFP (chef profond)",t:"muscle",c:"uln",myo:["C8","T1"]},
+  // sensory (cutaneous) branches — shown only when Sensory toggle is on
+  latAntebrach:{l:"Lat. cutaneous n. of forearm",lf:"N. cutan\u00e9 lat. de l'avant-bras",t:"sensory",c:"mcn",terr:"Radial volar/dorsal forearm",terrf:"Avant-bras, bord radial"},
+  supLatBrach:{l:"Sup. lat. cutaneous n. of arm",lf:"N. cutan\u00e9 lat. sup. du bras",t:"sensory",c:"ax",terr:"Skin over lower deltoid (badge area)",terrf:"Peau du moignon de l'\u00e9paule"},
+  radSuperficial:{l:"Superficial radial n.",lf:"N. radial superficiel",t:"sensory",c:"rad",terr:"Dorsoradial hand + dorsum of radial 3\u00bd digits (to DIP)",terrf:"Main dorso-radiale + dos des 3\u00bd doigts radiaux"},
+  medDigital:{l:"Palmar digital branches",lf:"Br. digitales palmaires",t:"sensory",c:"med",terr:"Palmar 3\u00bd fingers (thumb, index, middle, radial \u00bd ring)",terrf:"3\u00bd doigts palmaires (pouce, index, majeur, \u00bd radiale de l'annulaire)"},
+  ulnDorsal:{l:"Dorsal cutaneous br.",lf:"Br. cutan\u00e9e dorsale",t:"sensory",c:"uln",terr:"Dorsoulnar hand + dorsum of 1\u00bd ulnar digits; arises ~5 cm proximal to wrist",terrf:"Main dorso-ulnaire + dos de 1\u00bd doigt ulnaire ; na\u00eet ~5 cm en amont du poignet"},
+  ulnDigital:{l:"Palmar digital branches",lf:"Br. digitales palmaires",t:"sensory",c:"uln",terr:"Palmar little finger + ulnar \u00bd ring (1\u00bd digits)",terrf:"Auriculaire + \u00bd ulnaire de l'annulaire (1\u00bd doigt, palmaire)"},
+  medBrachCut:{l:"Medial cutaneous n. of arm",lf:"N. cutan\u00e9 m\u00e9dial du bras",t:"sensory",c:"prox",terr:"Medial skin of the arm",terrf:"Face m\u00e9diale du bras"},
+  medAntebrachCut:{l:"Medial cutaneous n. of forearm",lf:"N. cutan\u00e9 m\u00e9dial de l'avant-bras",t:"sensory",c:"prox",terr:"Medial skin of the forearm",terrf:"Face m\u00e9diale de l'avant-bras"},
+  // --- distal precision: ulnar / radial / median branch detail ---
+  ulnSuperficial:{l:"Superficial terminal br.",lf:"Br. terminale superficielle",t:"branch",c:"uln"},
+  ulnHypothenar:{l:"Hypothenar motor br.",lf:"Br. motrice hypoth\u00e9nar",t:"branch",c:"uln"},
+  ulnDeepDistal:{l:"Deep br. (distal palm)",lf:"Br. profonde (paume distale)",t:"branch",c:"uln"},
+  palmBrevis:{l:"Palmaris brevis",lf:"Court palmaire",t:"muscle",c:"uln",myo:["C8","T1"]},
+  ulnPalmar:{l:"Palmar cutaneous br.",lf:"Br. cutan\u00e9e palmaire",t:"sensory",c:"uln",terr:"Hypothenar palm skin; arises proximal to Guyon's canal",terrf:"Peau de la paume (c\u00f4t\u00e9 ulnaire) ; na\u00eet en amont du canal de Guyon"},
+  radPostCutArm:{l:"Post. cutaneous n. of arm",lf:"N. cutan\u00e9 post. du bras",t:"sensory",c:"rad",terr:"Posterior skin of the arm",terrf:"Face post\u00e9rieure du bras"},
+  radLowLatCutArm:{l:"Inf. lat. cutaneous n. of arm",lf:"N. cutan\u00e9 lat. inf. du bras",t:"sensory",c:"rad",terr:"Inferolateral arm",terrf:"Face inf\u00e9ro-lat\u00e9rale du bras"},
+  radPostCutForearm:{l:"Post. cutaneous n. of forearm",lf:"N. cutan\u00e9 post. de l'avant-bras",t:"sensory",c:"rad",terr:"Posterior strip of the forearm",terrf:"Bande post\u00e9rieure de l'avant-bras"},
+  medPalmarCut:{l:"Palmar cutaneous br.",lf:"Br. cutan\u00e9e palmaire",t:"sensory",c:"med",terr:"Central palm; arises proximal to the carpal tunnel \u2014 spared in CTS",terrf:"Paume centrale ; na\u00eet en amont du canal carpien \u2014 \u00e9pargn\u00e9e dans le SCC"},
+};
+const L=id=>NODES[id][lang==="fr"?"lf":"l"]||NODES[id].l;
+const TERR=id=>NODES[id][lang==="fr"?"terrf":"terr"]||NODES[id].terr||"";
+
+const KIDS={
+  C5:["dorsalScap","TS"], C6:["longThor"], C7:["TM"], C8:["TI"], T1:[],
+  dorsalScap:["rhomboids","levScap"], longThor:["serratus"],
+  TS:["nSubcl","suprascap","CL","CP"], TM:[], TI:["CM"],
+  nSubcl:["subclavius"], suprascap:["supraspin","infraspin"],
+  CL:["latPect","mcn","med"], CP:["upSubscap","thoracodorsal","lowSubscap","ax","rad"], CM:["medPect","uln","medBrachCut","medAntebrachCut"],
+  latPect:["pecMajClav"], mcn:["coraco","biceps","brachialis","latAntebrach"],
+  med:["pronTeres","fcr","palmLong","fds","ain","medPalmarCut","recThenar","lumb12","medDigital"],
+  ain:["fdp23","fpl","pronQuad"], recThenar:["apb","fpbSup","oppPol"],
+  upSubscap:["subscap"], thoracodorsal:["latissimus"], lowSubscap:["teresMajor"], ax:["deltoid","teresMinor","supLatBrach"],
+  rad:["radPostCutArm","tricepsLong","tricepsLat","tricepsMed","anconeus","radLowLatCutArm","radPostCutForearm","brachiorad","ecrl","radSuperficial","deepRad"], deepRad:["ecrb","supinator","pin"],
+  pin:["ecu","edc","edm","apl","epl","epb","eip"],
+  medPect:["pecMinor","pecMajStern"],
+  uln:["fcu","fdp45","ulnPalmar","ulnDorsal","ulnSuperficial","deepUln"],
+  ulnSuperficial:["palmBrevis","ulnDigital"],
+  deepUln:["ulnHypothenar","ulnDeepDistal"],
+  ulnHypothenar:["adm","odm","fdm"],
+  ulnDeepDistal:["lumb34","palInteross","dorInteross","addPol","fpbDeep"],
+};
+const ROOTS=["C5","C6","C7","C8","T1"];
+const SEC=[["C6","TS",["C6"]],["T1","TI",["T1"]],["C5","longThor",["C5"]],["C7","longThor",["C7"]],
+  ["TM","CL",["C7"]],["TM","CP",["C7"]],["TI","CP",["C8","T1"]],["CM","med",["C8","T1"]]];
+const EDGELV={
+  "C5>TS":["C5"],"C6>TS":["C6"],"C7>TM":["C7"],"C8>TI":["C8"],"T1>TI":["T1"],
+  "C5>dorsalScap":["C5"],"C5>longThor":["C5"],"C6>longThor":["C6"],"C7>longThor":["C7"],
+  "TS>CL":["C5","C6"],"TS>CP":["C5","C6"],"TM>CL":["C7"],"TM>CP":["C7"],"TI>CP":["C8","T1"],"TI>CM":["C8","T1"],
+  "TS>nSubcl":["C5","C6"],"TS>suprascap":["C5","C6"],
+  "CL>latPect":["C5","C6","C7"],"CL>mcn":["C5","C6","C7"],"CL>med":["C5","C6","C7"],
+  "CP>upSubscap":["C5","C6"],"CP>thoracodorsal":["C6","C7","C8"],"CP>lowSubscap":["C5","C6"],"CP>ax":["C5","C6"],"CP>rad":["C5","C6","C7","C8"],
+  "CM>medPect":["C8","T1"],"CM>uln":["C8","T1"],"CM>med":["C8","T1"]
+};
+const ADJ={};
+const addEdge=(a,b,lv)=>{(ADJ[a]=ADJ[a]||[]).push([b,lv]);};
+Object.keys(KIDS).forEach(a=>KIDS[a].forEach(b=>addEdge(a,b,EDGELV[a+">"+b]||"*")));
+SEC.forEach(([a,b,lv])=>addEdge(a,b,lv));
+const ALL=Object.keys(NODES);
+const MUSCLES=ALL.filter(id=>NODES[id].t==="muscle");
+
+/* =====================================================================
+   ENGINE
+   ===================================================================== */
+function findPath(r,t){
+  const stack=[[r,[r]]], seen=new Set();
+  while(stack.length){
+    const [n,path]=stack.pop();
+    if(n===t) return path;
+    if(seen.has(n)) continue; seen.add(n);
+    (ADJ[n]||[]).forEach(([to,lv])=>{ if(lv==="*"||lv.includes(r)) stack.push([to,path.concat(to)]); });
+  }
+  return null;
+}
+function affectedRoots(N,m){ const out=[]; (NODES[m].myo||[]).forEach(r=>{const p=findPath(r,m); if(p&&p.includes(N)) out.push(r);}); return out; }
+function classify(N){
+  const complete=[],partial=[];
+  MUSCLES.forEach(m=>{ const a=affectedRoots(N,m); if(!a.length) return;
+    ((NODES[m].myo||[]).every(r=>a.includes(r))?complete:partial).push({id:m,roots:a}); });
+  return {complete,partial};
+}
+function affectedSet(N){ const {complete,partial}=classify(N); return new Set(complete.concat(partial).map(o=>o.id)); }
+function affectedSensory(N){ // sensory leaves reachable forward from N
+  const out=[],seen=new Set(),st=[N];
+  while(st.length){ const n=st.pop(); if(seen.has(n))continue; seen.add(n);
+    (ADJ[n]||[]).forEach(([to])=>{ if(NODES[to].t==="sensory") out.push(to); st.push(to); }); }
+  return [...new Set(out)];
+}
+function lineage(m){ const s=new Set(); (NODES[m].myo||[]).forEach(r=>{const p=findPath(r,m); if(p)p.forEach(x=>s.add(x));}); return s; }
+
+/* =====================================================================
+   LAYOUT / RENDER
+   ===================================================================== */
+let SHOW_SENSORY=false;
+const kidsOf=id=>(KIDS[id]||[]).filter(k=>SHOW_SENSORY||NODES[k].t!=="sensory");
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function cssvar(c){return c?(getComputedStyle(document.documentElement).getPropertyValue(c.replace(/var\(|\)/g,'').trim())||c).trim():c;}
+function colorOf(id){const n=NODES[id];return n.c?cssvar(C[n.c]):"#475569";}
+const POS={};
+function nodeW(id){
+  const n=NODES[id], base=(L(id)||"").length*6.6;
+  let w = n.t==="root" ? base+18 : base+16;
+  if(n.myo) w = base + 21 + n.myo.join("\u00b7").length*5.2; // room for the C·C root chip
+  return Math.min(300, Math.max(60, w));
+}
+function layout(){
+  for(const k in POS) delete POS[k];
+  const rowH=30; let leaf=0;
+  const place=(id,depth)=>{ const kids=kidsOf(id); POS[id]={depth,w:nodeW(id)};
+    if(kids.length){ kids.forEach(k=>place(k,depth+1)); POS[id].y=(POS[kids[0]].y+POS[kids[kids.length-1]].y)/2; }
+    else { POS[id].y=leaf*rowH+rowH/2; leaf++; } };
+  ROOTS.forEach(r=>place(r,0));
+  const maxD=Math.max(...Object.values(POS).map(p=>p.depth));
+  const colX=[]; let acc=8; const gap=34;
+  for(let d=0;d<=maxD;d++){ const w=Math.max(...Object.keys(POS).filter(id=>POS[id].depth===d).map(id=>POS[id].w),60); colX[d]=acc; acc+=w+gap; }
+  Object.keys(POS).forEach(id=>POS[id].x=colX[POS[id].depth]);
+  return {W:acc, H:Math.max(1,leaf)*rowH+10};
+}
+const svg=document.getElementById("tree");
+function render(){
+  const {W,H}=layout(); const PX=18,PT=10,PB=16; const w=Math.round(W),h=Math.round(H);
+  svg.setAttribute("viewBox",`${-PX} ${-PT} ${w+PX*2} ${h+PT+PB}`);
+  svg.setAttribute("width",w+PX*2); svg.setAttribute("height",h+PT+PB);
+  let edges="",nodes="";
+  Object.keys(KIDS).forEach(a=>kidsOf(a).forEach(b=>{ edges+=edgePath(a,b,NODES[b].t==="sensory"?"sens":false); }));
+  SEC.forEach(([a,b])=>{ if(POS[a]&&POS[b]) edges+=edgePath(a,b,"secm"); });
+  Object.keys(POS).forEach(id=>nodes+=nodeSVG(id));
+  svg.innerHTML=`<defs><filter id="sh" x="-20%" y="-45%" width="140%" height="190%"><feDropShadow dx="0" dy="1" stdDeviation="1.05" flood-color="#243049" flood-opacity="0.16"/></filter></defs><g id="edges">${edges}</g><g id="nodes">${nodes}</g>`;
+  svg.querySelectorAll(".node").forEach(g=>{
+    g.addEventListener("click",e=>{e.stopPropagation();onClick(g.dataset.id);});
+    g.addEventListener("mouseenter",()=>peek(g.dataset.id));
+    g.addEventListener("mouseleave",unpeek);
+  });
+}
+svg.addEventListener("click",()=>{ if(sel||slotA||slotB){ resetSel(); } });
+function edgePath(a,b,kind){ const pa=POS[a],pb=POS[b]; if(!pa||!pb)return "";
+  const x1=pa.x+pa.w,y1=pa.y,x2=pb.x,y2=pb.y,mx=(x1+x2)/2;
+  const cls= kind==="sens"?"edge sens": kind==="secm"?"edge sec":"edge";
+  return `<path class="${cls}" data-a="${a}" data-b="${b}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`;
+}
+function nodeSVG(id){
+  const p=POS[id],n=NODES[id],col=colorOf(id),h=22,y=p.y-h/2;
+  const sens=n.t==="sensory";
+  const fill=n.t==="root"?"#475569":(sens?"#f6f9fb":"#ffffff");
+  const sw=n.t==="nerve"?1.9:(n.t==="root"?0:1.2);
+  const sop=n.t==="root"?1:(n.t==="nerve"?0.9:(sens?0.7:0.55));
+  const dash=sens?` stroke-dasharray="3 3"`:"";
+  const barW=n.t==="nerve"?4.5:(n.t==="muscle"?3:3.5);
+  const tcol=n.t==="root"?"#fff":col;
+  const lc=sens?"nlabel sens":"nlabel";
+  let label=`<text class="${lc}" x="${p.x+9}" y="${p.y}" fill="${tcol}">${esc(L(id))}</text>`;
+  if(n.myo) label=`<text class="${lc}" x="${p.x+9}" y="${p.y}" fill="${tcol}">${esc(L(id))}<tspan class="nlv" dx="5">${n.myo.join("\u00b7")}</tspan></text>`;
+  const title=`${esc(L(id))}${n.myo?" \u00b7 "+n.myo.join(","):""}${sens?" \u00b7 "+esc(TERR(id)):""}`;
+  return `<g class="node" data-id="${id}" data-t="${n.t}">`+
+    `<rect x="${p.x}" y="${y}" width="${p.w}" height="${h}" rx="6" fill="${fill}" stroke="${col}" stroke-width="${sw}" stroke-opacity="${sop}"${dash} filter="url(#sh)"/>`+
+    `<rect x="${p.x}" y="${y}" width="${barW}" height="${h}" rx="2" fill="${col}"/>`+
+    label+`<title>${title}</title></g>`;
+}
+
+/* =====================================================================
+   INTERACTION
+   ===================================================================== */
+const panel=document.getElementById("panel");
+const NVORDER=["mcn","ax","med","rad","uln","prox"];
+let sel=null, cmpMode=false, slotA=null, slotB=null;
+const CMPA=()=>cssvar("var(--cmpA)"),CMPB=()=>cssvar("var(--cmpB)"),CMPBOTH=()=>cssvar("var(--cmpBoth)");
+
+function clearHL(){
+  svg.classList.remove("dimmed");
+  svg.querySelectorAll(".node").forEach(g=>{g.classList.remove("on","block","peek","peekhead");
+    const id=g.dataset.id,n=NODES[id],r=g.querySelector("rect");
+    r.setAttribute("fill", n.t==="root"?"#475569":(n.t==="sensory"?"#f6f9fb":"#ffffff"));
+    r.setAttribute("stroke", colorOf(id)); r.setAttribute("stroke-width", n.t==="nerve"?1.9:(n.t==="root"?0:1.2));
+    const lab=g.querySelector(".nlabel"); if(lab) lab.setAttribute("fill", n.t==="root"?"#fff":colorOf(id));
+  });
+  svg.querySelectorAll(".edge").forEach(e=>e.classList.remove("eon"));
+}
+function resetSel(){ sel=null; slotA=null; slotB=null; clearHL(); if(cmpMode) showCmpPrompt(); else showEmpty(); }
+function markOn(id){const g=svg.querySelector(`.node[data-id="${id}"]`); if(g)g.classList.add("on");}
+function markEdge(a,b){const e=svg.querySelector(`.edge[data-a="${a}"][data-b="${b}"]`); if(e)e.classList.add("eon");}
+function paintNode(id,fill,stroke,whiteText){const g=svg.querySelector(`.node[data-id="${id}"]`); if(!g)return; g.classList.add("on");
+  const r=g.querySelector("rect"); if(fill)r.setAttribute("fill",fill); if(stroke){r.setAttribute("stroke",stroke);r.setAttribute("stroke-opacity",1);}
+  if(whiteText){const lab=g.querySelector(".nlabel"); if(lab)lab.setAttribute("fill","#fff");}}
+
+function peek(id){ if(sel||cmpMode)return;
+  const node=NODES[id],g=svg.querySelector(`.node[data-id="${id}"]`); if(g)g.classList.add("peek","peekhead");
+  let ids=[]; if(node.t==="muscle")ids=[...lineage(id)];
+  else if(node.t==="sensory")ids=[id];
+  else { const {complete,partial}=classify(id); ids=complete.concat(partial).map(o=>o.id); if(SHOW_SENSORY)ids=ids.concat(affectedSensory(id)); }
+  ids.forEach(x=>{const gg=svg.querySelector(`.node[data-id="${x}"]`); if(gg)gg.classList.add("peek");});
+}
+function unpeek(){ svg.querySelectorAll(".node.peek").forEach(g=>g.classList.remove("peek","peekhead")); }
+
+function onClick(id){
+  if(cmpMode){ compareClick(id); return; }
+  if(sel===id){ sel=null; clearHL(); showEmpty(); return; }
+  sel=id; clearHL(); applySingle(id);
+}
+function applySingle(id){
+  const node=NODES[id];
+  svg.classList.add("dimmed");
+  const g=svg.querySelector(`.node[data-id="${id}"]`); g.classList.add("on","block");
+  if(node.t==="muscle"){ showMuscle(id); return; }
+  if(node.t==="sensory"){ markOn(id); showSensoryNode(id); return; }
+  const {complete,partial}=classify(id);
+  complete.concat(partial).forEach(({id:mid,roots})=>{
+    roots.forEach(r=>{const p=findPath(r,mid); if(p&&p.includes(id)){for(let i=0;i<p.length;i++){markOn(p[i]); if(i<p.length-1)markEdge(p[i],p[i+1]);}}});
+  });
+  complete.forEach(o=>paintNode(o.id,cssvar("var(--complete)"),cssvar("var(--complete)"),true));
+  partial.forEach(o=>paintNode(o.id,"#fcf1df",cssvar("var(--partial)"),false));
+  let sens=[];
+  if(SHOW_SENSORY){ sens=affectedSensory(id); sens.forEach(s=>{markOn(s); paintNode(s,"#e2efef",cssvar(C[NODES[s].c]),false);}); }
+  showPanel(id,complete,partial,sens);
+}
+function grpByNerve(arr){const by={}; arr.forEach(o=>{const c=NODES[o.id].c||"prox";(by[c]=by[c]||[]).push(o);}); return by;}
+function muscleLi(o,part){const n=NODES[o.id]; const keep=part?` \u00b7 ${T("keeps")} ${n.myo.filter(r=>!o.roots.includes(r)).join("/")}`:"";
+  return `<li class="${part?'part':''}"><span>${esc(L(o.id))}</span><span class="lv">${n.myo.join(" ")}${keep}</span></li>`;}
+function nerveGroups(arr,part){const by=grpByNerve(arr); let h="";
+  NVORDER.forEach(c=>{ if(!by[c])return; h+=`<div class="grp"><h4><span class="nv" style="background:${cssvar(C[c])}"></span>${NVNAME[lang][c]}</h4><ul class="musc">${by[c].map(o=>muscleLi(o,part)).join("")}</ul></div>`; });
+  return h;}
+function sensoryGroup(sens){ if(!sens.length)return "";
+  return `<div class="ph" style="margin-top:16px">${T("sensoryTerr")}</div><ul class="musc sens">`+
+    sens.map(s=>`<li><span>${esc(L(s))}</span><span class="terr">${esc(TERR(s))}</span></li>`).join("")+`</ul>`;}
+function typeLabel(t){return {root:T("typeRoot"),trunk:T("typeTrunk"),cord:T("typeCord"),nerve:T("typeNerve"),branch:T("typeBranch"),sensory:T("typeSensory")}[t]||"";}
+function showPanel(id,complete,partial,sens){
+  const n=NODES[id], proximal=["root","trunk","cord"].includes(n.t);
+  let h=`<div class="ph">${T("blockPoint")}</div><div class="blockpoint">${esc(L(id))}</div><div class="blockmeta">${typeLabel(n.t)}</div>`+
+    `<div class="countrow"><span class="pill c">${complete.length} ${T("complete")}</span>${partial.length?`<span class="pill p">${partial.length} ${T("partial")}</span>`:""}</div>`;
+  if(complete.length) h+=`<div class="ph" style="margin-top:14px">${T("completelyDen")}</div>`+nerveGroups(complete,false);
+  if(partial.length) h+=`<div class="ph" style="margin-top:16px">${T("partiallyAff")}</div>`+nerveGroups(partial,true);
+  if(!complete.length&&!partial.length) h+=`<p class="empty">${T("noDistal")}</p>`;
+  if(SHOW_SENSORY) h+=sensoryGroup(sens);
+  if(proximal) h+=`<div class="caveat">${T("proximalCaveat")}</div>`;
+  panel.innerHTML=h;
+}
+function showMuscle(id){
+  const n=NODES[id], ln=lineage(id); ln.forEach(markOn);
+  (n.myo||[]).forEach(r=>{const p=findPath(r,id); if(p)for(let i=0;i<p.length-1;i++)markEdge(p[i],p[i+1]);});
+  paintNode(id,cssvar("var(--complete)"),cssvar("var(--complete)"),true);
+  let longest=[]; (n.myo||[]).forEach(r=>{const p=findPath(r,id); if(p&&p.length>longest.length)longest=p;});
+  const chips=longest.map(x=>`<span class="chip">${esc(L(x))}</span>`).join(" <b>\u2192</b> ");
+  panel.innerHTML=`<div class="ph">${T("targetMuscle")}</div><div class="blockpoint">${esc(L(id))}</div>`+
+    `<div class="blockmeta">${NVNAME[lang][n.c]} \u00b7 ${T("myotome")} ${n.myo.join("\u2013")}</div>`+
+    `<div class="ph" style="margin-top:14px">${T("toBlockOnly")}</div><div class="pathline">${chips}</div>`+
+    `<div class="caveat">${T("onlyBranchNote").replace("{m}",esc(L(id)))}</div>`;
+}
+function showSensoryNode(id){
+  const n=NODES[id];
+  panel.innerHTML=`<div class="ph">${typeLabel("sensory")}</div><div class="blockpoint">${esc(L(id))}</div>`+
+    `<div class="blockmeta">${NVNAME[lang][n.c]}</div>`+
+    `<div class="ph" style="margin-top:14px">${T("territory")}</div><div class="pathline">${esc(TERR(id))}</div>`+
+    `<div class="caveat">${T("sensoryNodeMsg")}</div>`;
+}
+function showEmpty(){ panel.innerHTML=`<div class="empty">${T("emptyMsg")}</div>`; }
+
+/* compare */
+function showCmpPrompt(){ panel.innerHTML=`<div class="empty">${slotA?T("cmpPickB"):T("cmpPrompt")}</div>`; }
+function compareClick(id){
+  if(NODES[id].t==="sensory"){ return; }
+  if(!slotA){ slotA=id; clearHL(); applyCompare(); }
+  else if(!slotB){ if(id===slotA){ slotA=null; clearHL(); showCmpPrompt(); return;} slotB=id; clearHL(); applyCompare(); }
+  else { slotA=id; slotB=null; clearHL(); applyCompare(); }
+}
+function applyCompare(){
+  const sa=slotA?affectedSet(slotA):new Set(), sb=slotB?affectedSet(slotB):new Set();
+  const union=new Set([...sa,...sb]);
+  union.forEach(m=>{ const inA=sa.has(m),inB=sb.has(m);
+    const fill=inA&&inB?CMPBOTH():(inA?CMPA():CMPB()); paintNode(m,fill,fill,true); });
+  if(slotA) paintNode(slotA,null,CMPA(),false), svg.querySelector(`.node[data-id="${slotA}"] rect`).setAttribute("stroke-width","3");
+  if(slotB) paintNode(slotB,null,CMPB(),false), svg.querySelector(`.node[data-id="${slotB}"] rect`).setAttribute("stroke-width","3");
+  showComparePanel(sa,sb);
+}
+function cmpLi(id){const n=NODES[id]; return `<li><span>${esc(L(id))}</span><span class="lv">${(n.myo||[]).join(" ")}</span></li>`;}
+function showComparePanel(sa,sb){
+  const onlyA=[...sa].filter(m=>!sb.has(m)), onlyB=[...sb].filter(m=>!sa.has(m)), both=[...sa].filter(m=>sb.has(m));
+  const dot=c=>`<span class="nv" style="background:${c};width:9px;height:9px;border-radius:50%;display:inline-block"></span>`;
+  let h=`<div class="ph">${T("compare")}</div>`+
+    `<div class="pathline">${dot(CMPA())} <b>A</b> · ${slotA?esc(L(slotA)):"—"}<br>${dot(CMPB())} <b>B</b> · ${slotB?esc(L(slotB)):"—"}</div>`+
+    `<div class="countrow"><span class="pill a">${onlyA.length} ${T("onlyA")}</span><span class="pill both">${both.length} ${T("both")}</span><span class="pill b">${onlyB.length} ${T("onlyB")}</span></div>`;
+  const blk=(title,arr,cls)=> arr.length?`<div class="grp"><h4>${title}</h4><ul class="musc ${cls}">${arr.map(cmpLi).join("")}</ul></div>`:"";
+  h+=blk(T("onlyA"),onlyA,"")+blk(T("both"),both,"")+blk(T("onlyB"),onlyB,"");
+  if(!slotB) h+=`<div class="caveat">${T("cmpPickB")}</div>`;
+  panel.innerHTML=h;
+}
+
+function reApply(){
+  clearHL();
+  if(cmpMode){ if(slotA||slotB)applyCompare(); else showCmpPrompt(); }
+  else if(sel){ if(svg.querySelector(`.node[data-id="${sel}"]`)) applySingle(sel); else { sel=null; showEmpty(); } }
+  else showEmpty();
+}
+
+/* =====================================================================
+   CONTROLS / LANG
+   ===================================================================== */
+const q=document.getElementById("q"),qx=document.getElementById("qx");
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.getElementById("ttlMain").textContent=T("title");
+  document.getElementById("ttlSub").textContent=T("tsub");
+  document.getElementById("subTxt").innerHTML=T("sub");
+  q.placeholder=T("search");
+  document.getElementById("reset").textContent=T("reset");
+  document.getElementById("printbtn").textContent=T("print");
+  const sb=document.getElementById("sensBtn"); sb.textContent=T("sensory"); sb.classList.toggle("active",SHOW_SENSORY);
+  const cb=document.getElementById("cmpBtn"); cb.textContent=T("compare"); cb.classList.toggle("active",cmpMode);
+  document.getElementById("langBtn").textContent= lang==="en"?"Fran\u00e7ais":"English";
+  const items=[["complete","var(--complete)"],["partial","var(--partial)"],["mcn","var(--mcn)"],["ax","var(--ax)"],["med","var(--med)"],["rad","var(--rad)"],["uln","var(--uln)"],["prox","var(--prox)"]];
+  let lg=items.map(([k,c])=>`<span><i style="background:${c}"></i>${k==="complete"?T("complete"):k==="partial"?T("partial"):LEGTXT[lang][k]}</span>`).join("");
+  if(SHOW_SENSORY) lg+=`<span><i class="dash"></i>${LEGTXT[lang].sensory}</span>`;
+  document.getElementById("legend").innerHTML=lg;
+}
+document.getElementById("langBtn").addEventListener("click",()=>{ lang=lang==="en"?"fr":"en"; applyLang(); render(); reApply(); });
+document.getElementById("sensBtn").addEventListener("click",()=>{ SHOW_SENSORY=!SHOW_SENSORY; applyLang(); render(); reApply(); });
+document.getElementById("cmpBtn").addEventListener("click",()=>{ cmpMode=!cmpMode; sel=null; slotA=null; slotB=null; clearHL(); applyLang();
+  if(cmpMode) showCmpPrompt(); else showEmpty(); });
+q.addEventListener("input",()=>{ const v=q.value.trim().toLowerCase(); qx.style.display=v?"block":"none"; if(!v)return;
+  const hit=MUSCLES.find(m=>L(m).toLowerCase().includes(v)||m.toLowerCase().includes(v));
+  if(hit){ if(cmpMode){cmpMode=false;applyLang();} sel=null; clearHL(); onClick(hit); const g=svg.querySelector(`.node[data-id="${hit}"]`); g&&g.scrollIntoView({block:"center",behavior:"smooth"}); } });
+qx.addEventListener("click",()=>{ q.value=""; qx.style.display="none"; resetSel(); });
+document.getElementById("reset").addEventListener("click",()=>{ q.value=""; qx.style.display="none"; resetSel(); });
+document.getElementById("printbtn").addEventListener("click",()=>window.print());
+window.addEventListener("keydown",e=>{ if(e.key==="Escape"){ q.value=""; qx.style.display="none"; resetSel(); } });
+
+// tests
+window.__classify=classify; window.__findPath=findPath; window.__affectedSensory=affectedSensory; window.__affectedSet=affectedSet;
+window.onClick=onClick; window.peek=peek; window.unpeek=unpeek; window.__setLang=l=>{lang=l;applyLang();render();reApply();};
+window.__setSensory=v=>{SHOW_SENSORY=v;applyLang();render();reApply();};
+window.__setCompare=v=>{cmpMode=v;sel=null;slotA=null;slotB=null;clearHL();applyLang();cmpMode?showCmpPrompt():showEmpty();};
+
+applyLang(); render(); showEmpty();
+</script>
+</body>
+</html>
